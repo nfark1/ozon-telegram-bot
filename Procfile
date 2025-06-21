@@ -1,0 +1,1 @@
+worker: python ozon_report_text_bot_no_points.py
