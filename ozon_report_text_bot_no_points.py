@@ -136,11 +136,29 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("📎 Пришли Excel-файл от Ozon — я верну текстовый отчёт с расшифровкой.")
 
 def main():
-    app = ApplicationBuilder().token(TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.Document.ALL, handle_file))
-    print("🤖 Бот запущен. Жду Excel-файл...")
-    app.run_polling()
+    from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters
 
-if __name__ == "__main__":
-    main()
+async def start(update, context):
+    await update.message.reply_text("Привет! Пришли мне Excel-файл отчета Ozon 📦")
+
+async def handle_file(update, context):
+    document = update.message.document
+    if document:
+        file = await context.bot.get_file(document.file_id)
+        file_path = f"/tmp/{document.file_name}"
+        await file.download_to_drive(file_path)
+
+        # 💰 Обработка отчёта (твою функцию вставь здесь)
+        report = extract_report(file_path)
+
+        await update.message.reply_text(report)
+    else:
+        await update.message.reply_text("⚠️ Пришли, пожалуйста, Excel-файл.")
+
+def main():
+    app = ApplicationBuilder().token(TOKEN).build()
+
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.Document.FILE_EXTENSION(".xlsx"), handle_file))
+
+    app.run_polling()
